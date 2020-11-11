@@ -1,5 +1,7 @@
 import sys, json, zipfile, audioop, hashlib, wave, io
 
+from pydub import AudioSegment
+
 sys.setrecursionlimit(4100)
 
 def printWarning(message):
@@ -1391,11 +1393,17 @@ class ProjectConverter:
             md5 = s['assetId']
             self.soundAssets[s['assetId']] = [len(self.soundAssets)]
 
-            if s['dataFormat'] == 'wav':
+            if s['dataFormat'] == 'wav' or s['dataFormat'] == 'mp3':
                 f = self.zfsb3.open(s['md5ext'], 'r')
                 wav = bytes(f.read())
                 try:
-                    wavData = wave.open(io.BytesIO(wav), 'rb')
+                    if s['dataFormat'] == 'mp3':
+                        sound = AudioSegment.from_mp3(io.BytesIO(wav))
+                        sound.export('tmp.wav',format='wav')
+                        s['dataFormat'] = 'wav'
+                        wavData = wave.open('tmp.wav', 'rb')
+                    else:
+                        wavData = wave.open(io.BytesIO(wav), 'rb')
                     sampData = wavData.readframes(wavData.getnframes())
                     width = wavData.getsampwidth()
                     channels = wavData.getnchannels()
